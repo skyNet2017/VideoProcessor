@@ -1,15 +1,15 @@
 apply plugin: 'com.android.library'
 
 android {
-    namespace 'com.hw.videoprocessor'
+    namespace 'com.hw.videoprocessor.speed.soundtouch'
     compileSdk 35
-    //ndkVersion "28.0.13004108"  // 指定具体版本
+    ndkVersion "28.0.13004108"
+
     defaultConfig {
         minSdk 21
         targetSdk 35
         versionCode 1
         versionName "1.0"
-
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -27,8 +27,7 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'org.jetbrains:annotations:23.0.0'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test:runner:1.5.2'
+    implementation project(':videoprocessor')
+    implementation 'androidx.annotation:annotation:1.2.0'
+
 }

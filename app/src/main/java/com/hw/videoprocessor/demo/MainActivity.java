@@ -31,6 +31,7 @@ import android.widget.VideoView;
 import com.hw.videoprocessor.VideoEffects;
 import com.hw.videoprocessor.VideoProcessor;
 import com.hw.videoprocessor.VideoUtil;
+import com.hw.videoprocessor.speed.soundtouch.SoundTouchAudioTempoProcessor;
 import com.hw.videoprocessor.util.CL;
 import com.jaygoo.widget.RangeSeekBar;
 
@@ -65,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         initActionBar();
         CL.setLogEnable(true);
+        VideoProcessor.setAudioTempoProcessor(new SoundTouchAudioTempoProcessor());
 
         final TextView uploadVideo = (TextView) findViewById(R.id.uploadVideo);
         TextView cutVideo = (TextView) findViewById(R.id.cropVideo);

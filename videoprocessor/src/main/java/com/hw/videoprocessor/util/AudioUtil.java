@@ -12,7 +12,7 @@ import android.util.Pair;
 import com.hw.videoprocessor.VideoProcessor;
 import com.hw.videoprocessor.VideoUtil;
 import com.hw.videoprocessor.jssrc.SSRC;
-import net.surina.soundtouch.SoundTouch;
+import com.hw.videoprocessor.speed.AudioTempoProcessor;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -786,18 +786,29 @@ public class AudioUtil {
             channelConfig = AudioFormat.CHANNEL_IN_STEREO;
         }
         new PcmToWavUtil(sampleRate, channelConfig, oriChannelCount, AudioFormat.ENCODING_PCM_16BIT).pcmToWav(pcmFile.getAbsolutePath(), wavFile.getAbsolutePath());
-        //开始处理pcm
-        CL.i("start process pcm speed");
-        File outFile = new File(context.getCacheDir(), pcmFile.getName() + ".outpcm");
-        SoundTouch st = new SoundTouch();
-        st.setTempo(speed);
-
-        int res = st.processFile(wavFile.getAbsolutePath(), outFile.getAbsolutePath());
-        if (res < 0) {
-            pcmFile.delete();
-            wavFile.delete();
-            outFile.delete();
-            return;
+        final File outFile;
+        if (Math.abs(speed - 1.0f) < 1e-4f) {
+            CL.i("audio tempo skipped (speed == 1)");
+            outFile = wavFile;
+        } else {
+            AudioTempoProcessor tempoProcessor = VideoProcessor.getAudioTempoProcessor();
+            if (tempoProcessor == null) {
+                CL.w("AudioTempoProcessor not set; using speed 1");
+                outFile = wavFile;
+            } else {
+                CL.i("apply audio tempo via AudioTempoProcessor");
+                File tempOut = new File(context.getCacheDir(), pcmFile.getName() + ".outpcm");
+                int res = tempoProcessor.applyTempo(wavFile.getAbsolutePath(), tempOut.getAbsolutePath(), speed);
+                if (res < 0) {
+                    if (tempOut.exists()) {
+                        tempOut.delete();
+                    }
+                    CL.w("applyTempo failed; using speed 1");
+                    outFile = wavFile;
+                } else {
+                    outFile = tempOut;
+                }
+            }
         }
         //重新将速率变化过后的pcm写入
         MediaExtractor pcmExtrator = new MediaExtractor();

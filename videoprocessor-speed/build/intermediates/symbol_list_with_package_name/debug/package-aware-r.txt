@@ -1,0 +1,2 @@
+com.hw.videoprocessor.speed.soundtouch
+string app_name

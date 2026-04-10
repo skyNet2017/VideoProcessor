@@ -9,4 +9,4 @@ pluginManagement {
 }
 
 rootProject.name = 'VideoProcessor'
-include ':app', ':videoprocessor'
+include ':app', ':videoprocessor', ':videoprocessor-speed'

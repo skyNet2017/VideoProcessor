@@ -19,6 +19,7 @@ import com.hw.videoprocessor.util.PcmToWavUtil;
 import com.hw.videoprocessor.util.VideoMultiStepProgress;
 import com.hw.videoprocessor.util.VideoProgressAve;
 import com.hw.videoprocessor.util.VideoProgressListener;
+import com.hw.videoprocessor.speed.AudioTempoProcessor;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,6 +53,21 @@ public class VideoProcessor {
      * 控制音频合成时，如果输入的音频文件长度不够，是否重复填充
      */
     public static boolean AUDIO_MIX_REPEAT = true;
+
+    @Nullable
+    private static volatile AudioTempoProcessor audioTempoProcessor;
+
+    /**
+     * 注入变速实现（通常来自 videoprocessor-speed 模块）。为 null 时非 1 倍速按 1 倍速处理。
+     */
+    public static void setAudioTempoProcessor(@Nullable AudioTempoProcessor processor) {
+        audioTempoProcessor = processor;
+    }
+
+    @Nullable
+    public static AudioTempoProcessor getAudioTempoProcessor() {
+        return audioTempoProcessor;
+    }
 
     final static int TIMEOUT_USEC = 2500;
 
