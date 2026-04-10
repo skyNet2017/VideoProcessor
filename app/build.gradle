@@ -1,14 +1,16 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 29
+    namespace 'com.hw.videoprocessor.demo'
+    compileSdk 35
+
     defaultConfig {
         applicationId "com.hw.videoprocessor"
-        minSdkVersion 21
-        targetSdkVersion 29
+        minSdk 21
+        targetSdk 35
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
@@ -17,16 +19,18 @@ android {
         }
     }
     compileOptions {
-        targetCompatibility JavaVersion.VERSION_1_8
-        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_11
     }
-    buildToolsVersion '26.0.2'
 }
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'com.android.support:appcompat-v7:26.1.0'
-    testImplementation 'junit:junit:4.12'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.core:core:1.9.0'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test:runner:1.5.2'
     implementation 'com.github.Jay-Goo:RangeSeekBar:v1.1.0'
     implementation project(path: ':videoprocessor')
 }

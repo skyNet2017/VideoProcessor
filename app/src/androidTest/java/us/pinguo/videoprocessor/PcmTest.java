@@ -2,8 +2,8 @@ package us.pinguo.videoprocessor;
 
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 import com.hw.videoprocessor.VideoProcessor;
 import com.hw.videoprocessor.util.AudioFadeUtil;
 import com.hw.videoprocessor.util.AudioUtil;
@@ -28,7 +28,7 @@ public class PcmTest {
     @Test
     public void testReverse() throws Exception {
         CL.setLogEnable(true);
-        Context context = InstrumentationRegistry.getTargetContext();
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         File videoFile = new File("/sdcard/DCIM/Camera/VID_20180411_152833.mp4");
         File outFile = new File("/sdcard/re.mp4");
         File pcmFile = new File("/sdcard/re.pcm");
@@ -44,7 +44,7 @@ public class PcmTest {
 
     public void testFade() throws Exception {
         CL.setLogEnable(true);
-        Context context = InstrumentationRegistry.getTargetContext();
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         File aacFile = new File(context.getCacheDir(), "test.aac");
         copyAssets(context, "test.aac", aacFile.getAbsolutePath());
         File cacheDir = new File("/mnt/sdcard/test");

@@ -1,19 +1,16 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.github.dcendents.android-maven'
-group = 'yellowcath'
 
 android {
-    compileSdkVersion 29
-
-
+    namespace 'com.hw.videoprocessor'
+    compileSdk 35
+    ndkVersion "28.0.13004108"  // 指定具体版本
     defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 26
+        minSdk 21
+        targetSdk 35
         versionCode 1
         versionName "1.0"
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -23,9 +20,15 @@ android {
         }
     }
 
+    compileOptions {
+        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_11
+    }
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'org.jetbrains:annotations:16.0.2'
+    implementation 'org.jetbrains:annotations:23.0.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test:runner:1.5.2'
 }

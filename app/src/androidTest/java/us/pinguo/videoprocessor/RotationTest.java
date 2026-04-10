@@ -2,8 +2,8 @@ package us.pinguo.videoprocessor;
 
 import android.content.Context;
 import android.media.MediaMetadataRetriever;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 import android.util.Log;
 import com.hw.videoprocessor.VideoProcessor;
 import com.hw.videoprocessor.util.CL;
@@ -23,7 +23,7 @@ public class RotationTest {
     //    @Test
     public void testRotation() throws Exception {
 //        CL.setLogEnable(true);
-//        Context context = InstrumentationRegistry.getTargetContext();
+//        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
 //        File videoFile = new File("/mnt/sdcard/DCIM/rotate.mp4");
 //        File outFile = new File(context.getCacheDir(), "t.mp4");
 //
@@ -47,7 +47,7 @@ public class RotationTest {
     @Test
     public void testReverse() throws Exception {
         CL.setLogEnable(true);
-        Context context = InstrumentationRegistry.getTargetContext();
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         File videoFile = new File("/mnt/sdcard/DCIM/rotate.mp4");
         File outFile = new File(context.getCacheDir(), "t.mp4");
 

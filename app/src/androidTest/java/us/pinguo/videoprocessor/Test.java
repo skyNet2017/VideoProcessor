@@ -1,8 +1,8 @@
 package us.pinguo.videoprocessor;
 
 import android.content.Context;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 import android.util.Log;
 import com.hw.videoprocessor.VideoProcessor;
 import com.hw.videoprocessor.util.CL;
@@ -22,7 +22,7 @@ public class Test {
     @org.junit.Test
     public void test() throws Exception {
         CL.setLogEnable(true);
-        Context context = InstrumentationRegistry.getTargetContext();
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         File file = new File("/storage/emulated/0/Tencent/QQfile_recv/VID_20180217_103218.mp4");
 
         VideoProcessor.processor(context)

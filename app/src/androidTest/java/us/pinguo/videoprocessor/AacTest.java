@@ -3,8 +3,8 @@ package us.pinguo.videoprocessor;
 import android.content.Context;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 import android.util.Log;
 import com.hw.videoprocessor.VideoProcessor;
 import com.hw.videoprocessor.VideoUtil;
@@ -40,7 +40,7 @@ public class AacTest {
 
     @Test
     public void test2() throws Exception {
-        Context context = InstrumentationRegistry.getTargetContext();
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         File videoFile = new File("/mnt/sdcard/DCIM/Camera/VID_20180921_121547.mp4");
         File outFile = new File("/mnt/sdcard/amr.mp4");
         long s = System.currentTimeMillis();

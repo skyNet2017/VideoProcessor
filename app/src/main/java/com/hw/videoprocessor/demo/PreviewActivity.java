@@ -5,9 +5,11 @@ import android.media.MediaFormat;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 import android.view.MenuItem;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -38,7 +40,12 @@ public class PreviewActivity extends AppCompatActivity {
         seekBar = (SeekBar) findViewById(R.id.seekBar);
 
         TextView tvInstruction = (TextView) findViewById(R.id.tvInstruction);
-        Uri uri = getIntent().getParcelableExtra(KEY_URI);
+        Uri uri;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            uri = getIntent().getParcelableExtra(KEY_URI, Uri.class);
+        } else {
+            uri = getIntent().getParcelableExtra(KEY_URI);
+        }
 
         String videoInfo = "";
         try {
