@@ -68,6 +68,14 @@ public class MainActivity extends AppCompatActivity {
         CL.setLogEnable(true);
         VideoProcessor.setAudioTempoProcessor(new SoundTouchAudioTempoProcessor());
 
+        TextView compressDemo = (TextView) findViewById(R.id.compressDemo);
+        compressDemo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, VideoCompressDemoActivity.class));
+            }
+        });
+
         final TextView uploadVideo = (TextView) findViewById(R.id.uploadVideo);
         TextView cutVideo = (TextView) findViewById(R.id.cropVideo);
         TextView scaleVideo = (TextView) findViewById(R.id.scaleVideo);

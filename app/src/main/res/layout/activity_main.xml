@@ -88,12 +88,26 @@
             android:textColor="#FFFFFF"
             android:textSize="16sp" />
 
+        <TextView
+            android:id="@+id/compressDemo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/uploadVideo"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="5dp"
+            android:background="@drawable/upload_video_selector"
+            android:gravity="center"
+            android:padding="5dp"
+            android:text="compress demo"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp" />
+
         <TableLayout
             android:id="@+id/footer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            android:layout_below="@+id/uploadVideo"
+            android:layout_below="@+id/compressDemo"
             android:layout_marginTop="5dp"
             android:gravity="center_horizontal|bottom"
             android:orientation="horizontal">

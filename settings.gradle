@@ -10,3 +10,5 @@ pluginManagement {
 
 rootProject.name = 'VideoProcessor'
 include ':app', ':videoprocessor', ':videoprocessor-speed'
+include ':videocompress-api-ffmpeg'
+include ':videocompress-api'
