@@ -31,6 +31,10 @@ public class VideoCompressUtil {
 
    public static Context context ;
    public static boolean showCompressProgressDialog = false;
+   /**
+     * 不再使用.仅为api兼容性而保留此字段
+     */
+   @Deprecated
     public static boolean showCompareAfterCompress = AppUtils.isAppDebug();
     public static boolean showGridInfo = false;
 
@@ -55,7 +59,7 @@ public class VideoCompressUtil {
     public static void init(Context context,boolean showCompressProgressDialog,
                             boolean showCompareAfterCompress){
         VideoCompressUtil.context = Utils.getApp();
-        VideoCompressUtil.showCompressProgressDialog = showCompressProgressDialog;
+        VideoCompressUtil.showCompressProgressDialog = showCompressProgressDialog && AppUtils.isAppDebug();
         VideoCompressUtil.showCompareAfterCompress = showCompareAfterCompress;
         if (context instanceof Activity) {
             CompressProgressDialogManager.getInstance().bindHostActivity((Activity) context);
@@ -90,6 +94,9 @@ public class VideoCompressUtil {
     }
 
     public static void showCompressTaskListDialog(Activity hostActivity) {
+        if (!AppUtils.isAppDebug()) {
+            return;
+        }
         CompressProgressDialogManager.getInstance().showTaskListDialog(hostActivity);
     }
 
@@ -142,7 +149,7 @@ public class VideoCompressUtil {
     public static void doCompress(boolean async,String inputPath, @Nullable String outDir,
                                   @CompressType.Type String compressType, ICompressListener listener){
         String progressTaskKey = null;
-        if (VideoCompressUtil.showCompressProgressDialog) {
+        if (VideoCompressUtil.showCompressProgressDialog && AppUtils.isAppDebug()) {
             progressTaskKey = CompressProgressDialogManager.getInstance().registerQueued(inputPath);
         }
         CompressTask task = new CompressTask(async, inputPath, outDir, compressType, listener, progressTaskKey);
@@ -162,10 +169,15 @@ public class VideoCompressUtil {
         Runnable advanceQueue = () -> COMPRESS_QUEUE.onTaskFinished(VideoCompressUtil::runNextQueuedTask);
 
         File input = new File(task.inputPath);
-        File dir = new File(Utils.getApp().getExternalCacheDir(),"videoCompress");
-
+        File dir;
         if(!TextUtils.isEmpty(task.outDir)){
             dir = new File(task.outDir);
+        } else {
+            File cacheDir = Utils.getApp().getExternalCacheDir();
+            if (cacheDir == null) {
+                cacheDir = Utils.getApp().getCacheDir();
+            }
+            dir = new File(cacheDir, "videoCompress");
         }
         dir.mkdirs();
 
@@ -183,7 +195,7 @@ public class VideoCompressUtil {
         ICompressListener listener = task.listener;
         //装饰器模式:
         listener = new PostProcessorListener(listener);
-        if(VideoCompressUtil.showCompressProgressDialog && task.progressTaskKey != null){
+        if(VideoCompressUtil.showCompressProgressDialog && AppUtils.isAppDebug() && task.progressTaskKey != null){
             listener = new DefaultDialogCompressListener(ActivityUtils.getTopActivity(), listener, task.progressTaskKey);
         }
         listener = new TerminalOnceListener(listener);

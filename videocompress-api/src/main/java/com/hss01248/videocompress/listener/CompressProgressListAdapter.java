@@ -49,6 +49,9 @@ class CompressProgressListAdapter extends BaseAdapter {
     }
 
     CompressProgressItem getItemAt(int position) {
+        if (position < 0 || position >= displayItems.size()) {
+            return null;
+        }
         return displayItems.get(position);
     }
 
@@ -87,8 +90,10 @@ class CompressProgressListAdapter extends BaseAdapter {
         CompressProgressItem item = displayItems.get(position);
         Glide.with(context).clear(holder.ivThumbnail);
         Glide.with(context)
+                .asBitmap()
                 .load(new File(item.inputPath))
-                .apply(new RequestOptions().frame(0).transform(new CenterCrop()))
+                .frame(0)
+                .apply(new RequestOptions().transform(new CenterCrop()))
                 .into(holder.ivThumbnail);
         holder.tvFileName.setText(new File(item.inputPath).getName());
         holder.tvEnqueueTime.setText(context.getString(

@@ -49,20 +49,31 @@ public class CompressProgressDialogManager {
     }
 
     /** Called when a task enters the serial queue. */
-    public synchronized String registerQueued(String inputPath) {
+    public String registerQueued(String inputPath) {
         return registerQueued(inputPath, ActivityUtils.getTopActivity());
     }
 
-    /** Called when a task enters the serial queue; {@code hostActivity} helps bind the dialog host. */
-    public synchronized String registerQueued(String inputPath, Activity hostActivity) {
-        bindHostActivity(hostActivity);
-        joinOrderCounter++;
-        long enqueueTime = System.currentTimeMillis();
-        String taskKey = inputPath + "#" + joinOrderCounter;
-        CompressProgressItem item = new CompressProgressItem(taskKey, inputPath, joinOrderCounter, enqueueTime);
-        item.status = CompressProgressItem.Status.WAITING;
-        items.put(taskKey, item);
-        postRefresh();
+    /**
+     * Called when a task enters the serial queue; {@code hostActivity} helps bind the dialog host.
+     * The task key is generated atomically; actual map insertion happens on the main thread
+     * so all {@code items} access stays single-threaded.
+     */
+    public String registerQueued(String inputPath, Activity hostActivity) {
+        final long order;
+        final long enqueueTime = System.currentTimeMillis();
+        synchronized (this) {
+            joinOrderCounter++;
+            order = joinOrderCounter;
+        }
+        String taskKey = inputPath + "#" + order;
+        mainHandler.post(() -> {
+            bindHostActivity(hostActivity);
+            CompressProgressItem item = new CompressProgressItem(taskKey, inputPath, order, enqueueTime);
+            item.status = CompressProgressItem.Status.WAITING;
+            items.put(taskKey, item);
+            refreshRetryCount = 0;
+            refreshUi();
+        });
         return taskKey;
     }
 
@@ -145,6 +156,9 @@ public class CompressProgressDialogManager {
 
     public void showTaskListDialog(Activity hostActivity) {
         mainHandler.post(() -> {
+            if (items.isEmpty()) {
+                return;
+            }
             bindHostActivity(hostActivity != null ? hostActivity : ActivityUtils.getTopActivity());
             refreshRetryCount = 0;
             refreshUi();
@@ -152,16 +166,12 @@ public class CompressProgressDialogManager {
     }
 
     private void scheduleAutoRemove(final String taskKey) {
-        mainHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                synchronized (CompressProgressDialogManager.this) {
-                    items.remove(taskKey);
-                }
+        mainHandler.postDelayed(() -> {
+            items.remove(taskKey);
+            if (items.isEmpty()) {
+                dismissDialogQuietly();
+            } else {
                 refreshUi();
-                if (items.isEmpty()) {
-                    dismissDialogQuietly();
-                }
             }
         }, TERMINAL_TASK_RETAIN_MS);
     }
@@ -169,8 +179,12 @@ public class CompressProgressDialogManager {
     private CompressProgressItem ensureItem(String taskKey, String inputPath) {
         CompressProgressItem item = items.get(taskKey);
         if (item == null) {
-            joinOrderCounter++;
-            item = new CompressProgressItem(taskKey, inputPath, joinOrderCounter, System.currentTimeMillis());
+            long order;
+            synchronized (this) {
+                joinOrderCounter++;
+                order = joinOrderCounter;
+            }
+            item = new CompressProgressItem(taskKey, inputPath, order, System.currentTimeMillis());
             items.put(taskKey, item);
         }
         return item;

@@ -38,7 +38,6 @@ public class VideoCompressDemoActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_CODE = 202;
 
     private SwitchCompat switchShowProgress;
-    private SwitchCompat switchShowCompare;
     private TextView tvQueue;
     private TextView tvStatus;
     private int pendingAction = -1;
@@ -51,7 +50,6 @@ public class VideoCompressDemoActivity extends AppCompatActivity {
         setContentView(R.layout.activity_video_compress_demo);
 
         switchShowProgress = findViewById(R.id.switchShowProgress);
-        switchShowCompare = findViewById(R.id.switchShowCompare);
         tvQueue = findViewById(R.id.tvQueue);
         tvStatus = findViewById(R.id.tvStatus);
         Button btnRecord = findViewById(R.id.btnRecordVideo);
@@ -227,9 +225,8 @@ public class VideoCompressDemoActivity extends AppCompatActivity {
 
     private void startCompress(final String inputPath) {
         boolean showProgress = switchShowProgress.isChecked();
-        boolean showCompare = switchShowCompare.isChecked();
 
-        VideoCompressUtil.init(this, showProgress, showCompare);
+        VideoCompressUtil.init(this, showProgress, false);
 
         tvStatus.setText("已加入队列: " + new File(inputPath).getName());
         refreshQueueUi();

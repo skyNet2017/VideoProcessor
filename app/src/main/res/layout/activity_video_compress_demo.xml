@@ -25,14 +25,6 @@
             android:checked="true"
             android:layout_marginBottom="8dp" />
 
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchShowCompare"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="压缩后显示对比"
-            android:checked="true"
-            android:layout_marginBottom="16dp" />
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
