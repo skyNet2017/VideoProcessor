@@ -198,11 +198,21 @@ public class VideoUtil {
                 null, null, null, false,videoTrack, decodeDone);
         decodeThread.start();
         encodeThread.start();
+        long joinTimeoutMs = 10 * 60 * 1000L;
         try {
-            decodeThread.join();
-            encodeThread.join();
+            decodeThread.join(joinTimeoutMs);
+            if (decodeThread.isAlive()) {
+                decodeThread.interrupt();
+                throw new RuntimeException("VideoUtil: decodeThread timed out after " + joinTimeoutMs + "ms");
+            }
+            encodeThread.join(joinTimeoutMs);
+            if (encodeThread.isAlive()) {
+                encodeThread.interrupt();
+                throw new RuntimeException("VideoUtil: encodeThread timed out after " + joinTimeoutMs + "ms");
+            }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("VideoUtil: processing interrupted", e);
         }
 
         try {

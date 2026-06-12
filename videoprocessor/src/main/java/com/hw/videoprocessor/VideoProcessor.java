@@ -294,16 +294,30 @@ public class VideoProcessor {
         decodeThread.start();
         encodeThread.start();
         audioProcessThread.start();
+        long joinTimeoutMs = 10 * 60 * 1000L;
         try {
             long s = System.currentTimeMillis();
-            decodeThread.join();
-            encodeThread.join();
+            decodeThread.join(joinTimeoutMs);
+            if (decodeThread.isAlive()) {
+                decodeThread.interrupt();
+                throw new RuntimeException("VideoProcessor: decodeThread timed out after " + joinTimeoutMs + "ms");
+            }
+            encodeThread.join(joinTimeoutMs);
+            if (encodeThread.isAlive()) {
+                encodeThread.interrupt();
+                throw new RuntimeException("VideoProcessor: encodeThread timed out after " + joinTimeoutMs + "ms");
+            }
             long e1 = System.currentTimeMillis();
-            audioProcessThread.join();
+            audioProcessThread.join(joinTimeoutMs);
+            if (audioProcessThread.isAlive()) {
+                audioProcessThread.interrupt();
+                throw new RuntimeException("VideoProcessor: audioProcessThread timed out after " + joinTimeoutMs + "ms");
+            }
             long e2 = System.currentTimeMillis();
             CL.w(String.format("编解码:%dms,音频:%dms", e1 - s, e2 - s));
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("VideoProcessor: processing interrupted", e);
         }
 
         try {
