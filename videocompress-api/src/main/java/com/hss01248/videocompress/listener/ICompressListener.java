@@ -18,9 +18,11 @@ public interface ICompressListener {
    default void onProgress(int progress, long progressTime){}
 
     /**
-     * 执行取消
+     * 执行取消。默认转发到 {@link #onError(String)}。
      */
-   default void onCancel(){}
+    default void onCancel() {
+        onError("cancelled");
+    }
 
     /**
      * 执行出错

@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="vc_compressing">compressing</string>
+    <string name="vc_compress_list_title">Compress tasks</string>
+    <string name="vc_compress_status_waiting">Waiting in queue</string>
+    <string name="vc_compress_status_running">Compressing %1$d%%</string>
+    <string name="vc_compress_status_success">Done — tap to compare</string>
+    <string name="vc_compress_status_error">Failed: %1$s</string>
+    <string name="vc_compress_status_error_unknown">Failed</string>
+    <string name="vc_compress_status_cancelled">Cancelled</string>
+    <string name="vc_compress_tap_when_done">Available after compression finishes</string>
+    <string name="vc_compress_enqueue_time">Enqueued: %1$s</string>
 </resources>

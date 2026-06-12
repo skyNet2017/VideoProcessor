@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="vc_compressing">压缩中</string>
+    <string name="vc_compress_list_title">压缩任务</string>
+    <string name="vc_compress_status_waiting">排队中</string>
+    <string name="vc_compress_status_running">压缩中 %1$d%%</string>
+    <string name="vc_compress_status_success">已完成，点击查看对比</string>
+    <string name="vc_compress_status_error">失败：%1$s</string>
+    <string name="vc_compress_status_error_unknown">失败</string>
+    <string name="vc_compress_status_cancelled">已取消</string>
+    <string name="vc_compress_tap_when_done">压缩完成后才可查看对比</string>
+    <string name="vc_compress_enqueue_time">入队时间：%1$s</string>
 </resources>

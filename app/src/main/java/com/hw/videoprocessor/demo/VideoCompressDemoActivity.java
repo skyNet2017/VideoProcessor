@@ -1,6 +1,7 @@
 package com.hw.videoprocessor.demo;
 
 import android.Manifest;
+import android.content.ClipData;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -38,6 +39,7 @@ public class VideoCompressDemoActivity extends AppCompatActivity {
 
     private SwitchCompat switchShowProgress;
     private SwitchCompat switchShowCompare;
+    private TextView tvQueue;
     private TextView tvStatus;
     private int pendingAction = -1;
     private Uri recordVideoUri;
@@ -50,9 +52,11 @@ public class VideoCompressDemoActivity extends AppCompatActivity {
 
         switchShowProgress = findViewById(R.id.switchShowProgress);
         switchShowCompare = findViewById(R.id.switchShowCompare);
+        tvQueue = findViewById(R.id.tvQueue);
         tvStatus = findViewById(R.id.tvStatus);
         Button btnRecord = findViewById(R.id.btnRecordVideo);
         Button btnPick = findViewById(R.id.btnPickVideo);
+        Button btnShowTaskList = findViewById(R.id.btnShowTaskList);
 
         VideoCompressUtil.setiPreviewVideo((context, path) -> {
             File file = new File(path);
@@ -79,6 +83,8 @@ public class VideoCompressDemoActivity extends AppCompatActivity {
                 pendingAction = REQUEST_PICK_VIDEO;
             }
         });
+
+        btnShowTaskList.setOnClickListener(v -> VideoCompressUtil.showCompressTaskListDialog(this));
     }
 
     private boolean ensurePermissions() {
@@ -137,6 +143,8 @@ public class VideoCompressDemoActivity extends AppCompatActivity {
     private void launchPickVideo() {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType("video/*");
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
         startActivityForResult(Intent.createChooser(intent, "选择视频"), REQUEST_PICK_VIDEO);
     }
 
@@ -155,19 +163,66 @@ public class VideoCompressDemoActivity extends AppCompatActivity {
         }
 
         if (requestCode == REQUEST_PICK_VIDEO) {
-            Uri videoUri = (data != null) ? data.getData() : null;
-            if (videoUri == null) {
+            List<Uri> videoUris = collectVideoUris(data);
+            if (videoUris.isEmpty()) {
                 tvStatus.setText("获取视频失败");
                 return;
             }
-            tvStatus.setText("正在拷贝视频到私有目录...");
-            String inputPath = copyUriToPrivateDir(videoUri);
-            if (inputPath == null) {
-                tvStatus.setText("无法拷贝视频文件");
-                return;
-            }
-            startCompress(inputPath);
+            handlePickedVideos(videoUris);
         }
+    }
+
+    private List<Uri> collectVideoUris(Intent data) {
+        List<Uri> uris = new ArrayList<>();
+        if (data == null) {
+            return uris;
+        }
+        ClipData clipData = data.getClipData();
+        if (clipData != null) {
+            for (int i = 0; i < clipData.getItemCount(); i++) {
+                Uri uri = clipData.getItemAt(i).getUri();
+                if (uri != null) {
+                    uris.add(uri);
+                }
+            }
+        } else if (data.getData() != null) {
+            uris.add(data.getData());
+        }
+        return uris;
+    }
+
+    private void handlePickedVideos(final List<Uri> videoUris) {
+        tvStatus.setText("正在拷贝 " + videoUris.size() + " 个视频到私有目录...");
+        new Thread(() -> {
+            List<String> inputPaths = new ArrayList<>();
+            int failedCount = 0;
+            for (int i = 0; i < videoUris.size(); i++) {
+                String inputPath = copyUriToPrivateDir(videoUris.get(i), i);
+                if (inputPath == null) {
+                    failedCount++;
+                } else {
+                    inputPaths.add(inputPath);
+                }
+            }
+            final int copyFailedCount = failedCount;
+            final List<String> copiedPaths = inputPaths;
+            runOnUiThread(() -> {
+                if (copiedPaths.isEmpty()) {
+                    tvStatus.setText("无法拷贝视频文件");
+                    return;
+                }
+                for (String inputPath : copiedPaths) {
+                    startCompress(inputPath);
+                }
+                if (copyFailedCount > 0) {
+                    tvStatus.setText("已加入队列 " + copiedPaths.size() + " 个视频，"
+                            + copyFailedCount + " 个拷贝失败");
+                } else {
+                    tvStatus.setText("已加入队列 " + copiedPaths.size() + " 个视频");
+                }
+                refreshQueueUi();
+            });
+        }).start();
     }
 
     private void startCompress(final String inputPath) {
@@ -176,20 +231,26 @@ public class VideoCompressDemoActivity extends AppCompatActivity {
 
         VideoCompressUtil.init(this, showProgress, showCompare);
 
-        tvStatus.setText("开始压缩: " + new File(inputPath).getName());
+        tvStatus.setText("已加入队列: " + new File(inputPath).getName());
+        refreshQueueUi();
 
         VideoCompressUtil.doCompressAsync(inputPath, null, CompressType.TYPE_SDR_720P,
                 new ICompressListener() {
                     @Override
                     public void onStart(String input, String outPath) {
-                        runOnUiThread(() -> tvStatus.setText(
-                                "压缩中...\n输入: " + new File(input).getName()
-                                        + "\n输出: " + new File(outPath).getName()));
+                        runOnUiThread(() -> {
+                            tvStatus.setText("压缩中...\n输入: " + new File(input).getName()
+                                    + "\n输出: " + new File(outPath).getName());
+                            refreshQueueUi();
+                        });
                     }
 
                     @Override
                     public void onProgress(int progress, long progressTime) {
-                        runOnUiThread(() -> tvStatus.setText("压缩进度: " + progress + "%"));
+                        runOnUiThread(() -> {
+                            tvStatus.setText("压缩进度: " + progress + "%");
+                            refreshQueueUi();
+                        });
                     }
 
                     @Override
@@ -206,28 +267,49 @@ public class VideoCompressDemoActivity extends AppCompatActivity {
                                     + "原始大小: " + formatSize(inputLen) + "\n"
                                     + "压缩后大小: " + formatSize(outputLen) + "\n"
                                     + "压缩率: " + ratio);
+                            refreshQueueUi();
                         });
                     }
 
                     @Override
                     public void onError(String message) {
-                        runOnUiThread(() -> tvStatus.setText("压缩失败: " + message));
+                        runOnUiThread(() -> {
+                            tvStatus.setText("压缩失败: " + message);
+                            refreshQueueUi();
+                        });
                     }
 
                     @Override
                     public void onCancel() {
-                        runOnUiThread(() -> tvStatus.setText("压缩已取消"));
+                        runOnUiThread(() -> {
+                            tvStatus.setText("压缩已取消");
+                            refreshQueueUi();
+                        });
                     }
                 });
     }
 
-    private String copyUriToPrivateDir(Uri uri) {
+    private void refreshQueueUi() {
+        int total = VideoCompressUtil.getPendingTaskCount();
+        if (total == 0) {
+            tvQueue.setText("压缩队列：空闲");
+            return;
+        }
+        int waiting = total - (VideoCompressUtil.isCompressing() ? 1 : 0);
+        if (waiting > 0) {
+            tvQueue.setText("压缩队列：执行中，等待 " + waiting + " 个（共 " + total + " 个）");
+        } else {
+            tvQueue.setText("压缩队列：执行中（共 " + total + " 个）");
+        }
+    }
+
+    private String copyUriToPrivateDir(Uri uri, int index) {
         try (InputStream in = getContentResolver().openInputStream(uri)) {
             if (in == null) return null;
             File moviesDir = getExternalFilesDir(Environment.DIRECTORY_MOVIES);
             if (moviesDir != null && !moviesDir.exists()) moviesDir.mkdirs();
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
-            File dest = new File(moviesDir, "PICK_" + timestamp + ".mp4");
+            File dest = new File(moviesDir, "PICK_" + timestamp + "_" + index + ".mp4");
             try (FileOutputStream out = new FileOutputStream(dest)) {
                 byte[] buf = new byte[8192];
                 int len;

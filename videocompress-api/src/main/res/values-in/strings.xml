@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="vc_compressing">Mengompresi</string>
+    <string name="vc_compress_list_title">Tugas kompresi</string>
+    <string name="vc_compress_status_waiting">Menunggu antrian</string>
+    <string name="vc_compress_status_running">Mengompresi %1$d%%</string>
+    <string name="vc_compress_status_success">Selesai — ketuk untuk bandingkan</string>
+    <string name="vc_compress_status_error">Gagal: %1$s</string>
+    <string name="vc_compress_status_error_unknown">Gagal</string>
+    <string name="vc_compress_status_cancelled">Dibatalkan</string>
+    <string name="vc_compress_tap_when_done">Tersedia setelah kompresi selesai</string>
+    <string name="vc_compress_enqueue_time">Antrian: %1$s</string>
 </resources>
