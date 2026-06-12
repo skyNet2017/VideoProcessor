@@ -14,8 +14,10 @@ class CompressTaskQueue {
     private final Queue<CompressTask> pending = new LinkedList<>();
     private boolean running;
 
-    synchronized void enqueue(CompressTask task, Runnable runner) {
-        pending.offer(task);
+    void enqueue(CompressTask task, Runnable runner) {
+        synchronized (this) {
+            pending.offer(task);
+        }
         drain(runner);
     }
 
@@ -27,11 +29,17 @@ class CompressTaskQueue {
         return running;
     }
 
-    private synchronized void drain(Runnable runner) {
-        if (running || pending.isEmpty()) {
-            return;
+    /**
+     * Starts the next task if idle. The runner executes outside the lock so that
+     * synchronous compression (async=false) does not block other queue callers.
+     */
+    private void drain(Runnable runner) {
+        synchronized (this) {
+            if (running || pending.isEmpty()) {
+                return;
+            }
+            running = true;
         }
-        running = true;
         runner.run();
     }
 
@@ -39,8 +47,10 @@ class CompressTaskQueue {
         return pending.poll();
     }
 
-    synchronized void onTaskFinished(Runnable runner) {
-        running = false;
+    void onTaskFinished(Runnable runner) {
+        synchronized (this) {
+            running = false;
+        }
         drain(runner);
     }
 

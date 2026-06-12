@@ -168,69 +168,78 @@ public class VideoCompressUtil {
     private static void doCompressInternal(CompressTask task) {
         Runnable advanceQueue = () -> COMPRESS_QUEUE.onTaskFinished(VideoCompressUtil::runNextQueuedTask);
 
-        File input = new File(task.inputPath);
-        File dir;
-        if(!TextUtils.isEmpty(task.outDir)){
-            dir = new File(task.outDir);
-        } else {
-            File cacheDir = Utils.getApp().getExternalCacheDir();
-            if (cacheDir == null) {
-                cacheDir = Utils.getApp().getCacheDir();
+        ICompressListener listener = null;
+        try {
+            File input = new File(task.inputPath);
+            File dir;
+            if(!TextUtils.isEmpty(task.outDir)){
+                dir = new File(task.outDir);
+            } else {
+                File cacheDir = Utils.getApp().getExternalCacheDir();
+                if (cacheDir == null) {
+                    cacheDir = Utils.getApp().getCacheDir();
+                }
+                dir = new File(cacheDir, "videoCompress");
             }
-            dir = new File(cacheDir, "videoCompress");
-        }
-        dir.mkdirs();
+            dir.mkdirs();
 
-        String fileName = input.getName();
-        if(fileName.contains(".")){
-           int idx =  fileName.lastIndexOf(".");
-           fileName = fileName.substring(0,idx)+"-"+task.compressType+fileName.substring(idx);
-        }
-        File out = new File(dir,fileName);
-        if(out.exists()){
-            out.delete();
-        }
+            String fileName = input.getName();
+            if(fileName.contains(".")){
+               int idx =  fileName.lastIndexOf(".");
+               fileName = fileName.substring(0,idx)+"-"+task.compressType+fileName.substring(idx);
+            }
+            File out = new File(dir,fileName);
+            if(out.exists()){
+                out.delete();
+            }
 
-        String outPath = out.getAbsolutePath();
-        ICompressListener listener = task.listener;
-        //装饰器模式:
-        listener = new PostProcessorListener(listener);
-        if(VideoCompressUtil.showCompressProgressDialog && AppUtils.isAppDebug() && task.progressTaskKey != null){
-            listener = new DefaultDialogCompressListener(ActivityUtils.getTopActivity(), listener, task.progressTaskKey);
-        }
-        listener = new TerminalOnceListener(listener);
-        listener = new CompressLockReleaseListener(listener, advanceQueue);
+            String outPath = out.getAbsolutePath();
+            listener = task.listener;
+            listener = new PostProcessorListener(listener);
+            if(VideoCompressUtil.showCompressProgressDialog && AppUtils.isAppDebug() && task.progressTaskKey != null){
+                listener = new DefaultDialogCompressListener(ActivityUtils.getTopActivity(), listener, task.progressTaskKey);
+            }
+            listener = new TerminalOnceListener(listener);
+            listener = new CompressLockReleaseListener(listener, advanceQueue);
 
-        try {
-            out.createNewFile();
-        } catch (IOException e) {
-            Log.w("compress","createNewFile failed: " + outPath, e);
-            listener.onError("createNewFile failed: " + e.getMessage());
-            return;
-        }
+            try {
+                out.createNewFile();
+            } catch (IOException e) {
+                Log.w("compress","createNewFile failed: " + outPath, e);
+                listener.onError("createNewFile failed: " + e.getMessage());
+                return;
+            }
 
-        listener.onStart(task.inputPath,outPath);
+            listener.onStart(task.inputPath,outPath);
 
-        VideoInfo.RealCompressInfo info = null;
-        try {
-            info = CompressHepler.getRealTargetWHBitrate(task.inputPath,task.compressType);
+            VideoInfo.RealCompressInfo info = null;
+            try {
+                info = CompressHepler.getRealTargetWHBitrate(task.inputPath,task.compressType);
+            } catch (Throwable e) {
+                Log.i("compress","获取视频信息异常,跳过压缩,使用原文件: " + e.getMessage(),e);
+                listener.onFinish(task.inputPath);
+                return;
+            }
+            if(!info.needCompress){
+                Log.i("compress","无需压缩: 实际比特率和分辨率小于期望比特率");
+                MediaCodecCompressImpl.infoMap.put(task.inputPath,info);
+                listener.onFinish(task.inputPath);
+                return;
+            }
+            if(compressor instanceof MediaCodecCompressImpl){
+                if("not_compact".equals(SPStaticUtils.getString("video_compress_mediacodec_compact"))){
+                    MediaCodecCompressImpl.setToUserFFmpeg();
+                }
+            }
+            compressor.compress(task.async,info,task.inputPath,outPath,task.compressType,listener);
         } catch (Throwable e) {
-            Log.i("compress","获取视频信息异常,跳过压缩,使用原文件: " + e.getMessage(),e);
-            listener.onFinish(task.inputPath);
-            return;
-        }
-        if(!info.needCompress){
-            Log.i("compress","无需压缩: 实际比特率和分辨率小于期望比特率");
-            MediaCodecCompressImpl.infoMap.put(task.inputPath,info);
-            listener.onFinish(task.inputPath);
-            return;
-        }
-        if(compressor instanceof MediaCodecCompressImpl){
-            if("not_compact".equals(SPStaticUtils.getString("video_compress_mediacodec_compact"))){
-                MediaCodecCompressImpl.setToUserFFmpeg();
+            Log.e("compress", "doCompressInternal unexpected error", e);
+            if (listener != null) {
+                try { listener.onError("unexpected: " + e.getMessage()); } catch (Throwable ignored) {}
+            } else {
+                advanceQueue.run();
             }
         }
-        compressor.compress(task.async,info,task.inputPath,outPath,task.compressType,listener);
     }
 
 }

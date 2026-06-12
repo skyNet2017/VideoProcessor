@@ -19,6 +19,7 @@ import com.blankj.utilcode.util.LogUtils;
 import com.hss01248.videocompress.R;
 import com.hss01248.videocompress.compare.CompressCompareActivity;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -42,7 +43,7 @@ public class CompressProgressDialogManager {
 
     private Dialog dialog;
     private CompressProgressListAdapter adapter;
-    private Activity boundActivity;
+    private WeakReference<Activity> boundActivityRef;
 
     public static CompressProgressDialogManager getInstance() {
         return INSTANCE;
@@ -80,7 +81,7 @@ public class CompressProgressDialogManager {
     /** Prefer a known host Activity (e.g. from {@code init} or compress listener). */
     public void bindHostActivity(Activity hostActivity) {
         if (isActivityAlive(hostActivity)) {
-            boundActivity = hostActivity;
+            boundActivityRef = new WeakReference<>(hostActivity);
         }
     }
 
@@ -190,11 +191,6 @@ public class CompressProgressDialogManager {
         return item;
     }
 
-    private void postRefresh() {
-        refreshRetryCount = 0;
-        mainHandler.post(this::refreshUi);
-    }
-
     private void scheduleRefreshRetry() {
         if (refreshRetryCount >= MAX_REFRESH_RETRY) {
             return;
@@ -248,12 +244,13 @@ public class CompressProgressDialogManager {
     }
 
     private Activity resolveActivity() {
-        if (isActivityAlive(boundActivity)) {
-            return boundActivity;
+        Activity bound = boundActivityRef != null ? boundActivityRef.get() : null;
+        if (isActivityAlive(bound)) {
+            return bound;
         }
         Activity top = ActivityUtils.getTopActivity();
         if (isActivityAlive(top)) {
-            boundActivity = top;
+            boundActivityRef = new WeakReference<>(top);
             return top;
         }
         return null;
@@ -267,12 +264,13 @@ public class CompressProgressDialogManager {
     }
 
     private void ensureDialog(Activity activity) {
-        if (dialog != null && boundActivity == activity) {
+        Activity bound = boundActivityRef != null ? boundActivityRef.get() : null;
+        if (dialog != null && bound == activity) {
             return;
         }
         dismissDialogQuietly();
 
-        boundActivity = activity;
+        boundActivityRef = new WeakReference<>(activity);
         View content = LayoutInflater.from(activity).inflate(R.layout.dialog_compress_progress_list, null);
         ListView listView = content.findViewById(R.id.lv_compress_tasks);
         adapter = new CompressProgressListAdapter(activity);
