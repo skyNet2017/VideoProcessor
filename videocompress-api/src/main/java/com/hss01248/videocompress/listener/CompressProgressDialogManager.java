@@ -44,6 +44,17 @@ public class CompressProgressDialogManager {
     private Dialog dialog;
     private CompressProgressListAdapter adapter;
     private WeakReference<Activity> boundActivityRef;
+    /** When the user manually dismisses the dialog, suppress auto-show until next explicit trigger. */
+    private volatile boolean userDismissed;
+    /**
+     * Tracks whether we last observed the dialog as showing.
+     * Used in {@link #refreshUi()} to synchronously detect user-dismiss, because
+     * {@link android.content.DialogInterface.OnDismissListener} is delivered asynchronously
+     * via Handler and may not fire before the next {@code refreshUi()} runs.
+     */
+    private boolean dialogShowingTracked;
+    /** Guards against {@link #dismissDialogQuietly()} triggering the dismiss listener. */
+    private boolean dismissingProgrammatically;
 
     public static CompressProgressDialogManager getInstance() {
         return INSTANCE;
@@ -68,6 +79,8 @@ public class CompressProgressDialogManager {
         }
         String taskKey = inputPath + "#" + order;
         mainHandler.post(() -> {
+            userDismissed = false;
+            dialogShowingTracked = false;
             bindHostActivity(hostActivity);
             CompressProgressItem item = new CompressProgressItem(taskKey, inputPath, order, enqueueTime);
             item.status = CompressProgressItem.Status.WAITING;
@@ -160,6 +173,8 @@ public class CompressProgressDialogManager {
             if (items.isEmpty()) {
                 return;
             }
+            userDismissed = false;
+            dialogShowingTracked = false;
             bindHostActivity(hostActivity != null ? hostActivity : ActivityUtils.getTopActivity());
             refreshRetryCount = 0;
             refreshUi();
@@ -206,11 +221,19 @@ public class CompressProgressDialogManager {
                 scheduleRefreshRetry();
                 return;
             }
+            if (!userDismissed && dialog != null && dialogShowingTracked && !dialog.isShowing()) {
+                userDismissed = true;
+                dialogShowingTracked = false;
+            }
             ensureDialog(activity);
             if (adapter != null) {
                 adapter.setItems(new ArrayList<>(items.values()));
             }
+            if (userDismissed) {
+                return;
+            }
             if (showDialogSafely(activity)) {
+                dialogShowingTracked = true;
                 refreshRetryCount = 0;
             }
         } catch (Throwable t) {
@@ -297,15 +320,24 @@ public class CompressProgressDialogManager {
                 .setView(content)
                 .setCancelable(true)
                 .create();
+        dialog.setOnDismissListener(d -> {
+            if (!dismissingProgrammatically) {
+                userDismissed = true;
+            }
+        });
     }
 
     private void dismissDialogQuietly() {
         try {
             if (dialog != null && dialog.isShowing()) {
+                dismissingProgrammatically = true;
                 dialog.dismiss();
+                dismissingProgrammatically = false;
             }
         } catch (Throwable ignored) {
+            dismissingProgrammatically = false;
         }
+        dialogShowingTracked = false;
         dialog = null;
         adapter = null;
     }
