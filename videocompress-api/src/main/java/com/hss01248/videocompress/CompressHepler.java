@@ -79,11 +79,11 @@ public class CompressHepler {
             String count_s = null;
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
                 count_s = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_FRAME_COUNT);
-                long count = Long.parseLong(count_s);
+                long count = parseLong2(count_s);
 //计算帧率
                 //获取视频时长，单位：毫秒(ms)
                 String duration_s = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-                long duration = Long.parseLong(duration_s);
+                long duration = parseLong2(duration_s);
                 long dt = Math.round(count*1000.0/duration);
                 return  (int) dt;
             }
@@ -99,7 +99,20 @@ public class CompressHepler {
             return 0;
         }
         try {
-            return Integer.parseInt(s);
+            return Math.toIntExact(Math.round(Double.parseDouble(s)));
+        }catch (Throwable throwable){
+            LogUtils.w(s,throwable);
+        }
+        return 0;
+    }
+
+    private static long parseLong2(String s) {
+        if(TextUtils.isEmpty(s)){
+            LogUtils.w("value is empty",s);
+            return 0;
+        }
+        try {
+            return Math.round(Double.parseDouble(s));
         }catch (Throwable throwable){
             LogUtils.w(s,throwable);
         }
